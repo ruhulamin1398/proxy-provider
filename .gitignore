@@ -1,0 +1,26 @@
+# Env files
+.env
+
+# Project files
+.hermes/
+uploads/
+
+# Binaries
+bin/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+*.test
+*.out
+vendor/
+.never_expire_token
+.token_never_expire
+app
