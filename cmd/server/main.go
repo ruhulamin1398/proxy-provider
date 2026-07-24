@@ -30,7 +30,10 @@ func main() {
 	// Router
 	r := gin.New()
 	r.Use(gin.Recovery())
-	r.Use(gin.Logger())
+	r.Use(func(c *gin.Context) {
+		println("[REQ] " + c.Request.Method + " " + c.Request.URL.Path)
+		c.Next()
+	})
 
 	// Health
 	r.GET("/health", func(c *gin.Context) {

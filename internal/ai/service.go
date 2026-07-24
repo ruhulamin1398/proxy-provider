@@ -105,8 +105,9 @@ func parseUpstreamResponse(body []byte, upstream string) (*ProxyResponse, error)
 		Choices []struct {
 			Index        int `json:"index"`
 			Message     struct {
-				Role    string `json:"role"`
-				Content string `json:"content"`
+				Role             string `json:"role"`
+				Content          string `json:"content"`
+				ReasoningContent string `json:"reasoning_content"`
 			} `json:"message"`
 			FinishReason string `json:"finish_reason"`
 		} `json:"choices"`
@@ -126,6 +127,11 @@ func parseUpstreamResponse(body []byte, upstream string) (*ProxyResponse, error)
 	if len(upstreamResp.Choices) > 0 {
 		content = upstreamResp.Choices[0].Message.Content
 		finishReason = upstreamResp.Choices[0].FinishReason
+
+		// If content is empty, use reasoning_content (reasoning models)
+		if content == "" && upstreamResp.Choices[0].Message.ReasoningContent != "" {
+			content = upstreamResp.Choices[0].Message.ReasoningContent
+		}
 	}
 
 	return &ProxyResponse{

@@ -74,6 +74,13 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 	if req.MaxTokens != nil {
 		upstreamReq.MaxTokens = *req.MaxTokens
 	}
+	// Default max_tokens for reasoning models (only when not explicitly set)
+	if req.MaxTokens == nil {
+		defaultTokens := 200000
+		req.MaxTokens = &defaultTokens
+		upstreamReq.MaxTokens = 200000
+	}
+
 	result, err := h.svc.Proxy(c.Request.Context(), upstreamReq)
 	if err != nil {
 		var ssrfErr *SSRFError
@@ -90,8 +97,13 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 
 func (h *Handler) ListModels(c *gin.Context) {
 	models := []ModelInfo{
-		{ID: "deepseek-v4-flash-free", Object: "model", Created: 1735689600, OwnedBy: "opencode"},
-		{ID: "deepseek-v4-flash", Object: "model", Created: 1735689600, OwnedBy: "opencode"},
+		{ID: "big-pickle", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
+		{ID: "deepseek-v4-flash-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
+		{ID: "mimo-v2.5-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
+		{ID: "ling-3.0-flash-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
+		{ID: "nemotron-3-ultra-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
+		{ID: "north-mini-code-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
+		{ID: "laguna-s-2.1-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
 	}
 	resp := ModelsResponse{
 		Object: "list",
