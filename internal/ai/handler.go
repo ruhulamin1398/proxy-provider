@@ -77,9 +77,13 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 	}
 	// Default max_tokens for reasoning models (only when not explicitly set)
 	if req.MaxTokens == nil {
-		defaultTokens := 8192
-		req.MaxTokens = &defaultTokens
 		upstreamReq.MaxTokens = 8192
+	} else {
+		// Pad small max_tokens for reasoning models — thinking consumes tokens too
+		if *req.MaxTokens < 16384 {
+			padded := *req.MaxTokens * 2
+			upstreamReq.MaxTokens = padded
+		}
 	}
 
 	result, err := h.svc.Proxy(c.Request.Context(), upstreamReq)
