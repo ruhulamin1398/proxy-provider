@@ -1,8 +1,9 @@
 services:
   - type: web
     name: proxy-provider
-    env: docker
-    dockerfilePath: ./Dockerfile
+    env: go
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o app
+    startCommand: ./app
     envVars:
       - key: PORT
         value: 8080
