@@ -74,6 +74,9 @@ Authorization: Bearer your-api-key
 }
 ```
 
+The endpoint also supports **SSE streaming** — add `"stream": true` to receive the response token-by-token.
+```
+
 ### Proxy (any OpenAI-compatible provider)
 
 ```bash
