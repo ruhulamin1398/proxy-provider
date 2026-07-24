@@ -3,6 +3,7 @@ package ai
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -76,9 +77,9 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 	}
 	// Default max_tokens for reasoning models (only when not explicitly set)
 	if req.MaxTokens == nil {
-		defaultTokens := 200000
+		defaultTokens := 8192
 		req.MaxTokens = &defaultTokens
-		upstreamReq.MaxTokens = 200000
+		upstreamReq.MaxTokens = 8192
 	}
 
 	result, err := h.svc.Proxy(c.Request.Context(), upstreamReq)
@@ -122,9 +123,9 @@ func toInternalMessages(msgs []ChatMessage) []Message {
 
 func toOpenAIResponse(model string, resp *ProxyResponse) *ChatCompletionResponse {
 	return &ChatCompletionResponse{
-		ID:      "chatcmpl-" + resp.Upstream,
+		ID:      "chatcmpl-" + model,
 		Object:  "chat.completion",
-		Created: 0,
+		Created: time.Now().Unix(),
 		Model:   model,
 		Choices: []ChatCompletionChoice{
 			{
