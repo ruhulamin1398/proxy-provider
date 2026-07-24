@@ -10,6 +10,7 @@ type ProxyRequest struct {
 	Messages    []Message `json:"messages"     validate:"required,min=1"`
 	Temperature float64   `json:"temperature,omitempty"`
 	MaxTokens   int       `json:"max_tokens,omitempty"`
+	Stream      bool      `json:"stream,omitempty"`
 }
 
 // Message represents a chat message in the OpenAI-compatible format.

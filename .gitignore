@@ -1,6 +1,9 @@
 # Env files
 .env
 
+# Runtime log
+log.txt
+
 # Project files
 .hermes/
 uploads/

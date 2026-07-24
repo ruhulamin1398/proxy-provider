@@ -34,6 +34,51 @@ func NewService() *Service {
 	}
 }
 
+// ProxyStream forwards a streaming request to an OpenAI-compatible provider
+// and returns the response body as an io.ReadCloser for SSE streaming.
+func (s *Service) ProxyStream(ctx context.Context, req *ProxyRequest) (io.ReadCloser, error) {
+	if err := validateSSRF(req.BaseURL); err != nil {
+		return nil, &SSRFError{Message: err.Error()}
+	}
+
+	upstreamReq := buildUpstreamRequest(req)
+	upstreamReq["stream"] = true
+
+	body, err := json.Marshal(upstreamReq)
+	if err != nil {
+		return nil, fmt.Errorf("marshal upstream request: %w", err)
+	}
+
+	chatURL := strings.TrimRight(req.BaseURL, "/") + "/chat/completions"
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, chatURL, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("create upstream request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+req.APIKey)
+	httpReq.Header.Set("Accept", "text/event-stream")
+
+	// Use a dedicated client without timeout for streaming
+	streamClient := &http.Client{
+		Transport: s.client.Transport,
+		Timeout:   0,
+	}
+	resp, err := streamClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("upstream request failed: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
+		return nil, fmt.Errorf("upstream returned %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	return resp.Body, nil
+}
+
 // Proxy forwards a request to an OpenAI-compatible provider.
 func (s *Service) Proxy(ctx context.Context, req *ProxyRequest) (*ProxyResponse, error) {
 	if err := validateSSRF(req.BaseURL); err != nil {
@@ -92,6 +137,9 @@ func buildUpstreamRequest(req *ProxyRequest) map[string]interface{} {
 	}
 	if req.MaxTokens > 0 {
 		body["max_tokens"] = req.MaxTokens
+	}
+	if req.Stream {
+		body["stream"] = true
 	}
 	return body
 }

@@ -1,8 +1,10 @@
 package ai
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -66,12 +68,6 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
-	// Streaming is not yet supported
-	if req.Stream {
-		openAIError(c, http.StatusBadRequest, "Streaming is not supported. Use non-streaming requests.", "invalid_request_error", "streaming_not_supported")
-		return
-	}
-
 	// Extract Bearer token from Authorization header
 	token := ""
 	auth := c.GetHeader("Authorization")
@@ -81,11 +77,12 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 
 	upstreamReq := &ProxyRequest{
 		BaseURL:     "https://opencode.ai/zen/v1",
-		APIKey: token,
+		APIKey:      token,
 		Model:       req.Model,
 		Messages:    toInternalMessages(req.Messages),
 		Temperature: 0,
 		MaxTokens:   0,
+		Stream:      req.Stream,
 	}
 	if req.Temperature != nil {
 		upstreamReq.Temperature = *req.Temperature
@@ -104,12 +101,61 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 		}
 	}
 
-	// Build a request summary for downstream logging
 	reqSummary, _ := json.Marshal(map[string]interface{}{
 		"model":    upstreamReq.Model,
 		"messages": upstreamReq.Messages,
 	})
 
+	// ── Streaming path ──
+	if req.Stream {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("X-Accel-Buffering", "no")
+
+		bodyReader, err := h.svc.ProxyStream(c.Request.Context(), upstreamReq)
+		if err != nil {
+			// Log downstream failure
+			common.WriteDownstreamLog(&common.DownstreamEntry{
+				Timestamp: time.Now().Format(time.RFC3339),
+				Model:     upstreamReq.Model,
+				URL:       upstreamReq.BaseURL + "/chat/completions",
+				ReqBody:   string(reqSummary),
+				Status:    "error",
+				Error:     err.Error(),
+			})
+			openAIError(c, http.StatusBadGateway, err.Error(), "server_error", "upstream_error")
+			return
+		}
+		defer bodyReader.Close()
+
+		// Log downstream start
+		common.WriteDownstreamLog(&common.DownstreamEntry{
+			Timestamp: time.Now().Format(time.RFC3339),
+			Model:     upstreamReq.Model,
+			URL:       upstreamReq.BaseURL + "/chat/completions",
+			ReqBody:   string(reqSummary),
+			Status:    "streaming",
+		})
+
+		// Stream SSE events from upstream to client
+		flusher, _ := c.Writer.(http.Flusher)
+		scanner := bufio.NewScanner(bodyReader)
+		scanner.Buffer(make([]byte, 64*1024), 256*1024)
+
+		for scanner.Scan() {
+			line := scanner.Text()
+			if _, err := fmt.Fprintf(c.Writer, "%s\n", line); err != nil {
+				break
+			}
+			if flusher != nil {
+				flusher.Flush()
+			}
+		}
+		return
+	}
+
+	// ── Non-streaming path ──
 	start := time.Now()
 	result, err := h.svc.Proxy(c.Request.Context(), upstreamReq)
 
