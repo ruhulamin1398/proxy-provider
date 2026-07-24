@@ -15,6 +15,7 @@ func RegisterRoutes(r *gin.Engine, h *Handler) {
 		v1.GET("/models", h.ListModels)
 	}
 
-	// Also register at the bare path (Hermes may call without /v1 prefix)
+	// Also register at the bare path (Hermes calls without /v1 prefix)
 	r.POST("/chat/completions", h.ChatCompletions)
+	r.GET("/models", h.ListModels)
 }

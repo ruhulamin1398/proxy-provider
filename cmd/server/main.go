@@ -40,6 +40,23 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"status": "ok"}})
 	})
 
+	// Log viewer
+	r.GET("/logs", func(c *gin.Context) {
+		data, err := os.ReadFile("/tmp/proxy.log")
+		if err != nil {
+			c.String(http.StatusOK, "Log file not found\n")
+			return
+		}
+		c.String(http.StatusOK, string(data))
+	})
+	r.GET("/logs/clear", func(c *gin.Context) {
+		if err := os.Truncate("/tmp/proxy.log", 0); err != nil {
+			c.String(http.StatusInternalServerError, "Failed to clear: %v\n", err)
+			return
+		}
+		c.String(http.StatusOK, "Log cleared\n")
+	})
+
 	// Register all routes (proxy + OpenAI-compatible endpoints)
 	ai.RegisterRoutes(r, aiHdl)
 
