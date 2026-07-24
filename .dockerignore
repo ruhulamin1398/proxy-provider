@@ -1,0 +1,8 @@
+.env
+.git/
+.gitignore
+log.txt
+bin/
+app
+*.md
+tmp/

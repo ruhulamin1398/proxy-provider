@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -30,8 +32,16 @@ func main() {
 	// Router
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(common.RequestLogger())
 	r.Use(func(c *gin.Context) {
-		println("[REQ] " + c.Request.Method + " " + c.Request.URL.Path)
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		c.Header("Access-Control-Max-Age", "86400")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
 		c.Next()
 	})
 
@@ -42,19 +52,25 @@ func main() {
 
 	// Log viewer
 	r.GET("/logs", func(c *gin.Context) {
-		data, err := os.ReadFile("/tmp/proxy.log")
+		data, err := os.ReadFile(common.LogFile)
 		if err != nil {
-			c.String(http.StatusOK, "Log file not found\n")
+			c.String(http.StatusOK, "No logs recorded yet.\n")
 			return
 		}
-		c.String(http.StatusOK, string(data))
+		// Display logs in reverse chronological order (newest first)
+		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+		var out strings.Builder
+		for i := 0; i < len(lines); i++ {
+			fmt.Fprintf(&out, "%3d. %s\n", len(lines)-i, lines[i])
+		}
+		c.String(http.StatusOK, out.String())
 	})
 	r.GET("/logs/clear", func(c *gin.Context) {
-		if err := os.Truncate("/tmp/proxy.log", 0); err != nil {
+		if err := os.Truncate(common.LogFile, 0); err != nil {
 			c.String(http.StatusInternalServerError, "Failed to clear: %v\n", err)
 			return
 		}
-		c.String(http.StatusOK, "Log cleared\n")
+		c.String(http.StatusOK, "Log file cleared.\n")
 	})
 
 	// Register all routes (proxy + OpenAI-compatible endpoints)

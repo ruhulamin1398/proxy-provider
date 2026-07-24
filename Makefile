@@ -1,4 +1,8 @@
-.PHONY: run build test lint tidy clean
+.PHONY: run build test lint tidy clean docker-build docker-push
+
+# Default image name — override with IMAGE_NAME=<your-dockerhub-user>/proxy-provider
+IMAGE_NAME ?= proxy-provider
+TAG      ?= latest
 
 run:
 	@go run ./cmd/server/main.go
@@ -18,3 +22,11 @@ tidy:
 
 clean:
 	@rm -rf bin/
+
+# ─── Docker ────────────────────────────────────────────────
+
+docker-build:
+	docker build -t $(IMAGE_NAME):$(TAG) .
+
+docker-push:
+	docker push $(IMAGE_NAME):$(TAG)

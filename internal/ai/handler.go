@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -43,14 +44,31 @@ func (h *Handler) Proxy(c *gin.Context) {
 	common.Success(c, http.StatusOK, result)
 }
 
+func openAIError(c *gin.Context, httpStatus int, message, errType, code string) {
+	c.JSON(httpStatus, gin.H{
+		"error": gin.H{
+			"message": message,
+			"type":    errType,
+			"param":   nil,
+			"code":    code,
+		},
+	})
+}
+
 func (h *Handler) ChatCompletions(c *gin.Context) {
 	var req ChatCompletionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.Fail(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		openAIError(c, http.StatusBadRequest, err.Error(), "invalid_request_error", "invalid_request")
 		return
 	}
 	if err := h.val.Struct(&req); err != nil {
-		common.Fail(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+		openAIError(c, http.StatusBadRequest, err.Error(), "invalid_request_error", "invalid_request")
+		return
+	}
+
+	// Streaming is not yet supported
+	if req.Stream {
+		openAIError(c, http.StatusBadRequest, "Streaming is not supported. Use non-streaming requests.", "invalid_request_error", "streaming_not_supported")
 		return
 	}
 
@@ -86,16 +104,48 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 		}
 	}
 
+	// Build a request summary for downstream logging
+	reqSummary, _ := json.Marshal(map[string]interface{}{
+		"model":    upstreamReq.Model,
+		"messages": upstreamReq.Messages,
+	})
+
+	start := time.Now()
 	result, err := h.svc.Proxy(c.Request.Context(), upstreamReq)
+
 	if err != nil {
+		// Log downstream failure
+		common.WriteDownstreamLog(&common.DownstreamEntry{
+			Timestamp: start.Format(time.RFC3339),
+			Model:     upstreamReq.Model,
+			URL:       upstreamReq.BaseURL + "/chat/completions",
+			ReqBody:   string(reqSummary),
+			Status:    "error",
+			Error:     err.Error(),
+		})
+
 		var ssrfErr *SSRFError
 		if errors.As(err, &ssrfErr) {
-			common.Fail(c, http.StatusBadRequest, "SSRF_BLOCKED", err.Error())
+			openAIError(c, http.StatusBadRequest, err.Error(), "invalid_request_error", "ssrf_blocked")
 			return
 		}
-		common.Fail(c, http.StatusBadGateway, "PROXY_ERROR", err.Error())
+		openAIError(c, http.StatusBadGateway, err.Error(), "server_error", "upstream_error")
 		return
 	}
+
+	// Log downstream success
+	common.WriteDownstreamLog(&common.DownstreamEntry{
+		Timestamp:    start.Format(time.RFC3339),
+		Model:        upstreamReq.Model,
+		URL:          upstreamReq.BaseURL + "/chat/completions",
+		ReqBody:      string(reqSummary),
+		RespBody:     result.Content,
+		Status:       "success",
+		PromptTokens: result.PromptTokens,
+		OutputTokens: result.OutputTokens,
+		TotalTokens:  result.TotalTokens,
+	})
+
 	openAIResp := toOpenAIResponse(req.Model, result)
 	c.JSON(http.StatusOK, openAIResp)
 }
