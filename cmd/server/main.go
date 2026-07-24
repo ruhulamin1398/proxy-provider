@@ -37,8 +37,8 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"status": "ok"}})
 	})
 
-	// Public proxy endpoint — no auth
-	r.POST("/proxy", aiHdl.Proxy)
+	// Register all routes (proxy + OpenAI-compatible endpoints)
+	ai.RegisterRoutes(r, aiHdl)
 
 	// Server
 	srv := &http.Server{
