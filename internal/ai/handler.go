@@ -213,6 +213,24 @@ func (h *Handler) ListModels(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// Props returns Hermes-style provider properties.
+func (h *Handler) Props(c *gin.Context) {
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"models": []map[string]interface{}{
+			{
+				"id":             "deepseek-v4-flash-free",
+				"name":           "deepseek-v4-flash-free",
+				"context_window": 200000,
+			},
+			{
+				"id":             "big-pickle",
+				"name":           "big-pickle",
+				"context_window": 1048576,
+			},
+		},
+	})
+}
+
 func toInternalMessages(msgs []ChatMessage) []Message {
 	out := make([]Message, len(msgs))
 	for i, m := range msgs {
