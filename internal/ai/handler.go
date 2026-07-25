@@ -83,6 +83,7 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 		Temperature: 0,
 		MaxTokens:   0,
 		Stream:      req.Stream,
+		Tools:       req.Tools,
 	}
 	if req.Temperature != nil {
 		upstreamReq.Temperature = *req.Temperature
@@ -244,7 +245,12 @@ func (h *Handler) DiscoveryProxy(c *gin.Context) {
 func toInternalMessages(msgs []ChatMessage) []Message {
 	out := make([]Message, len(msgs))
 	for i, m := range msgs {
-		out[i] = Message{Role: m.Role, Content: m.Content}
+		out[i] = Message{
+			Role:       m.Role,
+			Content:    m.Content,
+			ToolCalls:  m.ToolCalls,
+			ToolCallID: m.ToolCallID,
+		}
 	}
 	return out
 }

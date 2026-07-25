@@ -14,12 +14,15 @@ type ProxyRequest struct {
 	Temperature float64   `json:"temperature,omitempty"`
 	MaxTokens   int       `json:"max_tokens,omitempty"`
 	Stream      bool      `json:"stream,omitempty"`
+	Tools       []ToolDef `json:"tools,omitempty"`
 }
 
 // Message represents a chat message in the OpenAI-compatible format.
 type Message struct {
-	Role    string `json:"role"    validate:"required,oneof=system user assistant"`
-	Content string `json:"content" validate:"required"`
+	Role       string     `json:"role"`
+	Content    string     `json:"content,omitempty"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
 }
 
 // ProxyResponse wraps the upstream response.
@@ -61,10 +64,10 @@ type ToolFunction struct {
 
 // ChatMessage represents a message in OpenAI format.
 type ChatMessage struct {
-	Role      string     `json:"role"`
-	Content   string     `json:"content"`
-	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string   `json:"tool_call_id,omitempty"`
+	Role       string     `json:"role"`
+	Content    string     `json:"content,omitempty"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
 }
 
 // ToolCall represents a tool/function call from the model.

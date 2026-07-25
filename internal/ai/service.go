@@ -187,6 +187,9 @@ func buildUpstreamRequest(req *ProxyRequest) map[string]interface{} {
 	if req.Stream {
 		body["stream"] = true
 	}
+	if len(req.Tools) > 0 {
+		body["tools"] = req.Tools
+	}
 	return body
 }
 

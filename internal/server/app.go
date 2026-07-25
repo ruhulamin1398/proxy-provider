@@ -62,7 +62,7 @@ func Run() {
 		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 		var out strings.Builder
 		for i := len(lines) - 1; i >= 0; i-- {
-			fmt.Fprintf(&out, "%3d. %s\n", len(lines)-i, lines[i])
+			fmt.Fprintf(&out, "%3d. %s\n", i, lines[i])
 		}
 		c.String(http.StatusOK, out.String())
 	})
