@@ -18,24 +18,29 @@ PORT=8080
 LOG_LEVEL=info
 EOF
 
-# Download dependencies and build
-go mod tidy
-go build -o app ./cmd/server
-
-# Run the server
-./app
+# Install dependencies and run
+make run
 ```
 
 The server starts on **http://localhost:8080**.
 
-### Using `run.sh`
+## Available Commands
 
-Alternatively, use the provided script:
+| Command            | Like `pnpm ...` | Description                             |
+|--------------------|-----------------|-----------------------------------------|
+| `make dev`         | `pnpm dev`      | Run with live reload (via `air`)        |
+| `make run`         | `pnpm dev`      | Run directly with `go run`              |
+| `make build`       | `pnpm build`    | Compile to a binary in `bin/`           |
+| `make serve`       | `pnpm serve`    | Run the pre-built binary                |
+| `make start`       | —               | Build + serve in one step               |
+| `make test`        | `pnpm test`     | Run all tests                           |
+| `make clean`       | —               | Remove build artifacts                  |
+| `make docker-build`| —               | Build Docker image                      |
 
-```bash
-chmod +x run.sh
-./run.sh
-```
+> 💡 For **live reload** (`make dev`), install [air](https://github.com/air-verse/air):
+> ```bash
+> go install github.com/air-verse/air@latest
+> ```
 
 ## Routes
 

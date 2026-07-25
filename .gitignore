@@ -4,6 +4,12 @@
 # Runtime log
 log.txt
 
+# Node.js (leftover artifacts)
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
 # Project files
 .hermes/
 uploads/
