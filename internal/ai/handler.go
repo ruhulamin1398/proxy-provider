@@ -242,6 +242,22 @@ func (h *Handler) DiscoveryProxy(c *gin.Context) {
 	c.Data(status, "application/json", body)
 }
 
+// ListFreeModels returns only free models.
+func (h *Handler) ListFreeModels(c *gin.Context) {
+	models := []ModelInfo{
+		{ID: "deepseek-v4-flash-free", Object: "model", Created: time.Now().Unix(), OwnedBy: "opencode"},
+		{ID: "mimo-v2.5-free", Object: "model", Created: time.Now().Unix(), OwnedBy: "opencode"},
+		{ID: "nemotron-3-ultra-free", Object: "model", Created: time.Now().Unix(), OwnedBy: "opencode"},
+		{ID: "north-mini-code-free", Object: "model", Created: time.Now().Unix(), OwnedBy: "opencode"},
+		{ID: "laguna-s-2.1-free", Object: "model", Created: time.Now().Unix(), OwnedBy: "opencode"},
+	}
+	resp := ModelsResponse{
+		Object: "list",
+		Data:   models,
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
 func toInternalMessages(msgs []ChatMessage) []Message {
 	out := make([]Message, len(msgs))
 	for i, m := range msgs {

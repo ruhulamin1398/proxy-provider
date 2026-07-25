@@ -7,24 +7,22 @@ func RegisterRoutes(r *gin.Engine, h *Handler) {
 	// Existing proxy endpoint
 	r.POST("/proxy", h.Proxy)
 
-	// OpenAI-compatible endpoints — both /v1/ and / (bare) prefixes
-	// for compatibility with different Hermes auxiliary tasks
+	// OpenAI-compatible endpoints
 	v1 := r.Group("/v1")
 	{
 		v1.POST("/chat/completions", h.ChatCompletions)
-		v1.GET("/models", h.DiscoveryProxy)
+		v1.GET("/models", h.ListFreeModels)
 		v1.GET("/props", h.DiscoveryProxy)
 	}
 
-	// Also register at the bare path (Hermes calls without /v1 prefix)
+	// Also register at the bare path
 	r.POST("/chat/completions", h.ChatCompletions)
-	r.GET("/models", h.DiscoveryProxy)
+	r.GET("/models", h.ListFreeModels)
 
-	// ── Hermes / Ollama discovery probes (proxied to upstream) ──
-
+	// ── Hermes / Ollama discovery probes ──
 	api := r.Group("/api")
 	{
-		api.GET("/v1/models", h.DiscoveryProxy)
+		api.GET("/v1/models", h.ListFreeModels)
 		api.GET("/tags", h.DiscoveryProxy)
 	}
 
