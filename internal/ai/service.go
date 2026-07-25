@@ -199,9 +199,10 @@ func parseUpstreamResponse(body []byte, upstream string) (*ProxyResponse, error)
 		Choices []struct {
 			Index        int `json:"index"`
 			Message     struct {
-				Role             string `json:"role"`
-				Content          string `json:"content"`
-				ReasoningContent string `json:"reasoning_content"`
+				Role             string      `json:"role"`
+				Content          string      `json:"content"`
+				ReasoningContent string      `json:"reasoning_content"`
+				ToolCalls        []ToolCall  `json:"tool_calls,omitempty"`
 			} `json:"message"`
 			FinishReason string `json:"finish_reason"`
 		} `json:"choices"`
@@ -218,13 +219,17 @@ func parseUpstreamResponse(body []byte, upstream string) (*ProxyResponse, error)
 
 	content := ""
 	finishReason := ""
+	var toolCalls []ToolCall
+
 	if len(upstreamResp.Choices) > 0 {
-		content = upstreamResp.Choices[0].Message.Content
+		msg := upstreamResp.Choices[0].Message
+		content = msg.Content
 		finishReason = upstreamResp.Choices[0].FinishReason
+		toolCalls = msg.ToolCalls
 
 		// If content is empty, use reasoning_content (reasoning models)
-		if content == "" && upstreamResp.Choices[0].Message.ReasoningContent != "" {
-			content = upstreamResp.Choices[0].Message.ReasoningContent
+		if content == "" && msg.ReasoningContent != "" {
+			content = msg.ReasoningContent
 		}
 	}
 
@@ -236,6 +241,7 @@ func parseUpstreamResponse(body []byte, upstream string) (*ProxyResponse, error)
 		PromptTokens: upstreamResp.Usage.PromptTokens,
 		OutputTokens: upstreamResp.Usage.CompletionTokens,
 		TotalTokens:  upstreamResp.Usage.TotalTokens,
+		ToolCalls:    toolCalls,
 	}, nil
 }
 

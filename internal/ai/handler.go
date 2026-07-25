@@ -250,6 +250,10 @@ func toInternalMessages(msgs []ChatMessage) []Message {
 }
 
 func toOpenAIResponse(model string, resp *ProxyResponse) *ChatCompletionResponse {
+	msg := ChatMessage{Role: "assistant", Content: resp.Content}
+	if len(resp.ToolCalls) > 0 {
+		msg.ToolCalls = resp.ToolCalls
+	}
 	return &ChatCompletionResponse{
 		ID:      "chatcmpl-" + model,
 		Object:  "chat.completion",
@@ -258,7 +262,7 @@ func toOpenAIResponse(model string, resp *ProxyResponse) *ChatCompletionResponse
 		Choices: []ChatCompletionChoice{
 			{
 				Index:        0,
-				Message:      ChatMessage{Role: "assistant", Content: resp.Content},
+				Message:      msg,
 				FinishReason: resp.FinishReason,
 			},
 		},

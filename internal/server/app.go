@@ -61,7 +61,7 @@ func Run() {
 		// Display logs in reverse chronological order (newest first)
 		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 		var out strings.Builder
-		for i := 0; i < len(lines); i++ {
+		for i := len(lines) - 1; i >= 0; i-- {
 			fmt.Fprintf(&out, "%3d. %s\n", len(lines)-i, lines[i])
 		}
 		c.String(http.StatusOK, out.String())

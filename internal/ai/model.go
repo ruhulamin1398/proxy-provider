@@ -24,13 +24,14 @@ type Message struct {
 
 // ProxyResponse wraps the upstream response.
 type ProxyResponse struct {
-	Upstream       string `json:"upstream"`
-	Content        string `json:"content"`
-	FinishReason   string `json:"finish_reason"`
-	Model          string `json:"model"`
-	PromptTokens   int    `json:"prompt_tokens"`
-	OutputTokens   int    `json:"output_tokens"`
-	TotalTokens    int    `json:"total_tokens"`
+	Upstream       string     `json:"upstream"`
+	Content        string     `json:"content"`
+	FinishReason   string     `json:"finish_reason"`
+	Model          string     `json:"model"`
+	PromptTokens   int        `json:"prompt_tokens"`
+	OutputTokens   int        `json:"output_tokens"`
+	TotalTokens    int        `json:"total_tokens"`
+	ToolCalls      []ToolCall `json:"tool_calls,omitempty"`
 }
 
 // ─── OpenAI-compatible types (for /v1/chat/completions) ───
@@ -42,12 +43,41 @@ type ChatCompletionRequest struct {
 	Temperature *float64      `json:"temperature,omitempty"`
 	MaxTokens   *int          `json:"max_tokens,omitempty"`
 	Stream      bool          `json:"stream,omitempty"`
+	Tools       []ToolDef     `json:"tools,omitempty"`
+}
+
+// ToolDef defines a tool that the model can call.
+type ToolDef struct {
+	Type     string         `json:"type"`
+	Function ToolFunction   `json:"function"`
+}
+
+// ToolFunction describes a callable function for tool use.
+type ToolFunction struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Parameters  interface{} `json:"parameters"`
 }
 
 // ChatMessage represents a message in OpenAI format.
 type ChatMessage struct {
-	Role    string `json:"role"    validate:"required"`
-	Content string `json:"content" validate:"required"`
+	Role      string     `json:"role"`
+	Content   string     `json:"content"`
+	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string   `json:"tool_call_id,omitempty"`
+}
+
+// ToolCall represents a tool/function call from the model.
+type ToolCall struct {
+	ID       string            `json:"id"`
+	Type     string            `json:"type"`
+	Function ToolCallFunction  `json:"function"`
+}
+
+// ToolCallFunction represents the function details in a tool call.
+type ToolCallFunction struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
 }
 
 // ChatCompletionResponse represents an OpenAI-compatible response.
