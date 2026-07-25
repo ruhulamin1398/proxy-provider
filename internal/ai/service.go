@@ -79,6 +79,52 @@ func (s *Service) ProxyStream(ctx context.Context, req *ProxyRequest) (io.ReadCl
 	return resp.Body, nil
 }
 
+// ProbeProxy forwards a GET request to the upstream provider's discovery endpoint.
+// It maps proxy request paths to the correct upstream paths.
+func (s *Service) ProbeProxy(ctx context.Context, upstreamBase, path string, apiKey string) (int, []byte, error) {
+	// upstreamBase is "https://opencode.ai/zen/v1" (includes /v1)
+	// Strip /v1 to get the raw root for non-v1 paths
+	upstreamRoot := strings.TrimSuffix(upstreamBase, "/v1")
+	if upstreamRoot == "" {
+		upstreamRoot = upstreamBase
+	}
+
+	// Map proxy paths to upstream paths
+	upstreamPath := ""
+	switch {
+	case path == "/v1/models" || path == "/api/v1/models" || path == "/models":
+		upstreamPath = upstreamBase + "/models"
+	case path == "/v1/props" || path == "/props":
+		upstreamPath = upstreamBase + "/props"
+	case path == "/api/tags":
+		upstreamPath = upstreamRoot + "/api/tags"
+	case path == "/version":
+		upstreamPath = upstreamRoot + "/version"
+	default:
+		return 0, nil, fmt.Errorf("discovery path not allowed: %s", path)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, upstreamPath, nil)
+	if err != nil {
+		return 0, nil, fmt.Errorf("create upstream request: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+	httpReq.Header.Set("Accept", "application/json")
+
+	resp, err := s.client.Do(httpReq)
+	if err != nil {
+		return 0, nil, fmt.Errorf("upstream request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
+	if err != nil {
+		return 0, nil, fmt.Errorf("read upstream response: %w", err)
+	}
+
+	return resp.StatusCode, body, nil
+}
+
 // Proxy forwards a request to an OpenAI-compatible provider.
 func (s *Service) Proxy(ctx context.Context, req *ProxyRequest) (*ProxyResponse, error) {
 	if err := validateSSRF(req.BaseURL); err != nil {

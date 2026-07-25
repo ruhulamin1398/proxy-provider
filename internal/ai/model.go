@@ -1,5 +1,8 @@
 package ai
 
+// DefaultUpstreamURL is the default OpenAI-compatible provider endpoint.
+const DefaultUpstreamURL = "https://opencode.ai/zen/v1"
+
 // ─── Existing proxy types ───
 
 // ProxyRequest represents the incoming request to the AI proxy endpoint.

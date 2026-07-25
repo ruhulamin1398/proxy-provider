@@ -76,7 +76,7 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 	}
 
 	upstreamReq := &ProxyRequest{
-		BaseURL:     "https://opencode.ai/zen/v1",
+		BaseURL:     DefaultUpstreamURL,
 		APIKey:      token,
 		Model:       req.Model,
 		Messages:    toInternalMessages(req.Messages),
@@ -196,39 +196,49 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 	c.JSON(http.StatusOK, openAIResp)
 }
 
-func (h *Handler) ListModels(c *gin.Context) {
-	models := []ModelInfo{
-		{ID: "big-pickle", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
-		{ID: "deepseek-v4-flash-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
-		{ID: "mimo-v2.5-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
-		{ID: "ling-3.0-flash-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
-		{ID: "nemotron-3-ultra-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
-		{ID: "north-mini-code-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
-		{ID: "laguna-s-2.1-free", Object: "model", Created: 1784865912, OwnedBy: "opencode"},
+// DiscoveryProxy forwards a discovery/probe request to the upstream provider.
+// It extracts the API key from the Authorization header and proxies the path.
+func (h *Handler) DiscoveryProxy(c *gin.Context) {
+	// Extract API key from Authorization header
+	token := ""
+	auth := c.GetHeader("Authorization")
+	if len(auth) > 7 && auth[:7] == "Bearer " {
+		token = auth[7:]
 	}
-	resp := ModelsResponse{
-		Object: "list",
-		Data:   models,
-	}
-	c.JSON(http.StatusOK, resp)
-}
 
-// Props returns Hermes-style provider properties.
-func (h *Handler) Props(c *gin.Context) {
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"models": []map[string]interface{}{
-			{
-				"id":             "deepseek-v4-flash-free",
-				"name":           "deepseek-v4-flash-free",
-				"context_window": 200000,
-			},
-			{
-				"id":             "big-pickle",
-				"name":           "big-pickle",
-				"context_window": 1048576,
-			},
-		},
-	})
+	path := c.Request.URL.Path
+
+	status, body, err := h.svc.ProbeProxy(c.Request.Context(), DefaultUpstreamURL, path, token)
+	if err != nil || status != http.StatusOK {
+		// If upstream fails or returns non-200, return a sensible fallback
+		// so Hermes continues working
+		isModelsPath := path == "/v1/models" || path == "/api/v1/models" || path == "/models"
+		isPropsPath := path == "/api/tags" || path == "/v1/props" || path == "/props"
+		isVersionPath := path == "/version"
+
+		switch {
+		case isModelsPath:
+			c.JSON(http.StatusOK, gin.H{"object": "list", "data": []interface{}{}})
+		case isPropsPath:
+			c.JSON(http.StatusOK, gin.H{"models": []interface{}{}})
+		case isVersionPath:
+			c.JSON(http.StatusOK, gin.H{
+				"version":  "1.0.0",
+				"platform": "opencode",
+			})
+		default:
+			c.JSON(http.StatusOK, gin.H{})
+		}
+		return
+	}
+
+	// Forward the response as-is
+	for k, v := range map[string]string{
+		"Content-Type": "application/json",
+	} {
+		c.Header(k, v)
+	}
+	c.Data(status, "application/json", body)
 }
 
 func toInternalMessages(msgs []ChatMessage) []Message {
