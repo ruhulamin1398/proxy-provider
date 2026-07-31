@@ -1,6 +1,22 @@
 # Proxy Provider
 
-A minimal Go server that proxies requests to OpenAI-compatible providers.  
+A free AI proxy server that gets you past free-tier limits.
+
+Most AI providers give a free tier per API key. But some (like OpenCode)
+also rate-limit your IP/PC — so when one key hits its limit, your other
+fresh unused keys get blocked too, because they all share your IP.
+
+This proxy fixes that. Requests are sent through this server (a different
+IP), so every key gets a fresh start. Create another free key, and use
+its full quota through the proxy — no more "limit reached" errors.
+
+Two ways to use it:
+
+1. **Direct API** — send your provider URL, API key, and model, and it
+   forwards the request.
+2. **OpenAI-compatible endpoints** — it acts like an OpenAI server, so
+   Hermes or any OpenAI SDK can use it as a drop-in provider.
+
 Deployed at **https://proxy-provider.onrender.com**
 
 ## Quick use
