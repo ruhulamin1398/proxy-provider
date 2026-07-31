@@ -1,6 +1,66 @@
 # Proxy Provider
 
-A minimal Go server that proxies requests to OpenAI-compatible providers.
+A minimal Go server that proxies requests to OpenAI-compatible providers.  
+Deployed at **https://proxy-provider.onrender.com**
+
+## Quick use
+
+### 1. Direct api
+
+```http
+POST /proxy HTTP/1.1
+Host: proxy-provider.onrender.com
+Content-Type: application/json
+
+{
+  "base_url": "https://api.openai.com/v1",
+  "api_key": "sk-...",
+  "model": "gpt-4",
+  "messages": [
+    {"role": "user", "content": "Hello"}
+  ]
+}
+```
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "success": true,
+  "data": {
+    "upstream": "https://api.openai.com/v1",
+    "content": "Hello! How can I help you today?",
+    "finish_reason": "stop",
+    "model": "gpt-4",
+    "prompt_tokens": 9,
+    "output_tokens": 12,
+    "total_tokens": 21
+  }
+}
+```
+
+### 2. Ai provider at hermes
+
+```yaml
+# ~/.hermes/config.yaml
+custom_providers:
+  - name: proxy
+    api_base: https://proxy-provider.onrender.com/v1
+    api_key: your-api-key
+    models:
+      - deepseek-v4-flash-free
+      - mimo-v2.5-free
+      - ling-3.0-flash-free
+```
+
+Then select it in any channel:
+
+```
+/model set proxy/deepseek-v4-flash-free
+```
 
 ## Prerequisites
 
@@ -69,7 +129,7 @@ The server starts on **http://localhost:8080**.
 ```bash
 POST /v1/chat/completions
 Content-Type: application/json
-Authorization: Bearer your-api-key
+Authorization: Bearer ***
 
 {
   "model": "deepseek-v4-flash-free",
@@ -80,7 +140,6 @@ Authorization: Bearer your-api-key
 ```
 
 The endpoint also supports **SSE streaming** — add `"stream": true` to receive the response token-by-token.
-```
 
 ### Proxy (any OpenAI-compatible provider)
 
@@ -94,9 +153,7 @@ Content-Type: application/json
   "model": "gpt-4",
   "messages": [
     {"role": "user", "content": "Hello"}
-  ],
-  "temperature": 0.7,
-  "max_tokens": 100
+  ]
 }
 ```
 
