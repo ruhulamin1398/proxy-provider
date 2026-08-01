@@ -29,6 +29,18 @@ func (h *Handler) Proxy(c *gin.Context) {
 		common.Fail(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
 		return
 	}
+
+	// API key can come from the Authorization header (preferred)
+	// or from the body's api_key field (backward compat).
+	auth := c.GetHeader("Authorization")
+	if len(auth) > 7 && auth[:7] == "Bearer " {
+		req.APIKey = auth[7:]
+	}
+	if req.APIKey == "" {
+		common.Fail(c, http.StatusBadRequest, "VALIDATION_ERROR", "api_key is required (Authorization: Bearer <key> or body api_key)")
+		return
+	}
+
 	if err := h.val.Struct(&req); err != nil {
 		common.Fail(c, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
 		return

@@ -27,16 +27,20 @@ Deployed at **https://proxy-provider.onrender.com**
 POST /proxy HTTP/1.1
 Host: proxy-provider.onrender.com
 Content-Type: application/json
+Authorization: Bearer sk-...
 
 {
   "base_url": "https://api.openai.com/v1",
-  "api_key": "sk-...",
   "model": "gpt-4",
   "messages": [
     {"role": "user", "content": "Hello"}
   ]
 }
 ```
+
+The API key is sent via the `Authorization: Bearer <key>` header. The
+`api_key` body field is still accepted for backward compatibility, but
+the header takes precedence.
 
 Response:
 

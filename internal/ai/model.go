@@ -8,7 +8,7 @@ const DefaultUpstreamURL = "https://opencode.ai/zen/v1"
 // ProxyRequest represents the incoming request to the AI proxy endpoint.
 type ProxyRequest struct {
 	BaseURL     string    `json:"base_url"     validate:"required,url"`
-	APIKey      string    `json:"api_key"      validate:"required"`
+	APIKey      string    `json:"api_key,omitempty"`
 	Model       string    `json:"model"        validate:"required"`
 	Messages    []Message `json:"messages"     validate:"required,min=1"`
 	Temperature float64   `json:"temperature,omitempty"`
