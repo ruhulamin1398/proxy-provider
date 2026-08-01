@@ -166,16 +166,20 @@ The endpoint also supports **SSE streaming** — add `"stream": true` to receive
 ```bash
 POST /proxy
 Content-Type: application/json
+Authorization: Bearer ***
 
 {
   "base_url": "https://api.openai.com/v1",
-  "api_key": "sk-...",
   "model": "gpt-4",
   "messages": [
     {"role": "user", "content": "Hello"}
   ]
 }
 ```
+
+The API key is sent via the `Authorization: Bearer *** header. The
+`api_key` body field is still accepted for backward compatibility, but
+the header takes precedence.
 
 ## Logging
 
