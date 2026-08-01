@@ -19,22 +19,24 @@ type ProxyRequest struct {
 
 // Message represents a chat message in the OpenAI-compatible format.
 type Message struct {
-	Role       string     `json:"role"`
-	Content    string     `json:"content,omitempty"`
-	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Role             string     `json:"role"`
+	Content          string     `json:"content,omitempty"`
+	ReasoningContent string     `json:"reasoning_content,omitempty"`
+	ToolCalls        []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID       string     `json:"tool_call_id,omitempty"`
 }
 
 // ProxyResponse wraps the upstream response.
 type ProxyResponse struct {
-	Upstream       string     `json:"upstream"`
-	Content        string     `json:"content"`
-	FinishReason   string     `json:"finish_reason"`
-	Model          string     `json:"model"`
-	PromptTokens   int        `json:"prompt_tokens"`
-	OutputTokens   int        `json:"output_tokens"`
-	TotalTokens    int        `json:"total_tokens"`
-	ToolCalls      []ToolCall `json:"tool_calls,omitempty"`
+	Upstream         string     `json:"upstream"`
+	Content          string     `json:"content"`
+	ReasoningContent string     `json:"reasoning_content,omitempty"`
+	FinishReason     string     `json:"finish_reason"`
+	Model            string     `json:"model"`
+	PromptTokens     int        `json:"prompt_tokens"`
+	OutputTokens     int        `json:"output_tokens"`
+	TotalTokens      int        `json:"total_tokens"`
+	ToolCalls        []ToolCall `json:"tool_calls,omitempty"`
 }
 
 // ─── OpenAI-compatible types (for /v1/chat/completions) ───
@@ -51,8 +53,8 @@ type ChatCompletionRequest struct {
 
 // ToolDef defines a tool that the model can call.
 type ToolDef struct {
-	Type     string         `json:"type"`
-	Function ToolFunction   `json:"function"`
+	Type     string       `json:"type"`
+	Function ToolFunction `json:"function"`
 }
 
 // ToolFunction describes a callable function for tool use.
@@ -64,17 +66,18 @@ type ToolFunction struct {
 
 // ChatMessage represents a message in OpenAI format.
 type ChatMessage struct {
-	Role       string     `json:"role"`
-	Content    string     `json:"content,omitempty"`
-	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Role             string     `json:"role"`
+	Content          string     `json:"content,omitempty"`
+	ReasoningContent string     `json:"reasoning_content,omitempty"`
+	ToolCalls        []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID       string     `json:"tool_call_id,omitempty"`
 }
 
 // ToolCall represents a tool/function call from the model.
 type ToolCall struct {
-	ID       string            `json:"id"`
-	Type     string            `json:"type"`
-	Function ToolCallFunction  `json:"function"`
+	ID       string           `json:"id"`
+	Type     string           `json:"type"`
+	Function ToolCallFunction `json:"function"`
 }
 
 // ToolCallFunction represents the function details in a tool call.
@@ -111,9 +114,9 @@ type UsageInfo struct {
 
 // ModelInfo represents a model entry.
 type ModelInfo struct {
-	ID     string `json:"id"`
-	Object string `json:"object"`
-	Created int64 `json:"created"`
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int64  `json:"created"`
 	OwnedBy string `json:"owned_by"`
 }
 

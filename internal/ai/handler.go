@@ -262,10 +262,11 @@ func toInternalMessages(msgs []ChatMessage) []Message {
 	out := make([]Message, len(msgs))
 	for i, m := range msgs {
 		out[i] = Message{
-			Role:       m.Role,
-			Content:    m.Content,
-			ToolCalls:  m.ToolCalls,
-			ToolCallID: m.ToolCallID,
+			Role:             m.Role,
+			Content:          m.Content,
+			ReasoningContent: m.ReasoningContent,
+			ToolCalls:        m.ToolCalls,
+			ToolCallID:       m.ToolCallID,
 		}
 	}
 	return out
@@ -273,6 +274,9 @@ func toInternalMessages(msgs []ChatMessage) []Message {
 
 func toOpenAIResponse(model string, resp *ProxyResponse) *ChatCompletionResponse {
 	msg := ChatMessage{Role: "assistant", Content: resp.Content}
+	if resp.ReasoningContent != "" {
+		msg.ReasoningContent = resp.ReasoningContent
+	}
 	if len(resp.ToolCalls) > 0 {
 		msg.ToolCalls = resp.ToolCalls
 	}
